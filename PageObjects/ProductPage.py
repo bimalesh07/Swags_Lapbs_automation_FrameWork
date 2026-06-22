@@ -1,66 +1,85 @@
 import time
-from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
-from Utilities.CustomLogger import LogGen
 from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support.ui import Select  
+from Utilities.CustomLogger import LogGen
 
 class ProductPage:
     logger = LogGen.loggen()
     filters_xpath = "//select[@class='product_sort_container']"
-    ztoa ="//select[@class='product_sort_container']/option[@value='za']"
-    low_to_high = "//select[@class='product_sort_container']/option[@value='lohi']"
-    hight_to_low = "//select[@class='product_sort_container']/option[@value='hilo']"
-
-    allprodcuts = "//div[@class='inventory_item_name']"
-
+    allproducts_names_xpath = "//div[contains(@class, 'inventory_item_name')]"
+    allproducts_prices_xpath = "//div[contains(@class, 'inventory_item_price')]"
+    add_to_cart_xapth = "//button[@id='add-to-cart-sauce-labs-backpack']"
+    remove_btn_path ="//button[@id='add-to-cart-sauce-labs-backpack']"
 
     def __init__(self, driver):
         self.driver = driver
-        self.wait =  WebDriverWait(driver, 10)
-        self.logger = LogGen.loggen()
+        self.wait = WebDriverWait(driver, 10)
     
-
     def filters_by_value(self, choice):
-        self.logger.info("***********Navigate The Fillters bnt *****************")
-        navigate_btn = self.wait.until(EC.element_to_be_clickable((By.XPATH, self.filters_xpath)))
-        self.driver.execute_script("arguments[0].click();", navigate_btn)
-        time.sleep(2)
-        self.logger.info("*****************Succuessfully Click Fillters Btn*********")
-        time.sleep(2)
-        self.logger.info("********* Enters Fillters value start from here ***********")
-    
+        self.logger.info(f"*********** Selecting Filter Value: '{choice}' *****************")
+        # Step 1: Dropdown element ke clickable hone ka wait karo
+        dropdown_element = self.wait.until(EC.element_to_be_clickable((By.XPATH, self.filters_xpath)))
+        
+        # Step 2: Element to  ui when we see 
+        select = Select(dropdown_element)
+        choice = choice.lower().strip()
+        
         if choice == "ztoa":
-           fillters_btn = self.ztoa
-
-        elif choice == "low low high":
-            fillters_btn = self.low_to_high
-
+            select.select_by_value("za")     
+        elif choice == "low_to_high":
+            select.select_by_value("lohi")  
         elif choice == "high_to_low":
-            fillters_btn = self.hight_to_low
-        
-        else :
-            raise ValueError (f"Invalid Sorting Stiring Choice, {choice}")
-        
-        fillters_btn_search = self.wait.until(EC.element_to_be_clickable((By.XPATH, fillters_btn)))
-        self.driver.execute_script("arguments[0].click();", fillters_btn_search)
-        self.logger.info(f"Fillters are update to seraching sorting by update by value, {choice}")
+            select.select_by_value("hilo")  
+            raise ValueError(f"Invalid Sorting Choice Passed: {choice}")
+            
+        time.sleep(3)
+        self.logger.info(f"Successfully selected filter: {choice}")
 
-
-
-    def ValidatedFilters(self):
-        self.logger.info("*********Chekcing The Fillters Of Work or not *********************")
+    def get_product_names(self):
+        self.logger.info("********* Fetching Product Names from UI *********************")
         try:
-            products_list = self.wait.until(EC.visibility_of_element_located((By.XPATH, self.allprodcuts)))
-            return [product.text for product in products_list]
-        
+            elements = self.wait.until(EC.visibility_of_all_elements_located((By.XPATH, self.allproducts_names_xpath)))
+            return [element.text for element in elements]
         except Exception as e:
-            self.logger.info(f"******Products are not Visible in this page ,{e}")
+            self.logger.info(f"❌ Error fetching product names: {e}")
             return []
 
+    def get_product_prices(self):
+        self.logger.info("********* Fetching Product Prices from UI *********************")
+        try:
+            elements = self.wait.until(EC.visibility_of_all_elements_located((By.XPATH, self.allproducts_prices_xpath)))
+            # '$29.99' ko clean karke float decimal (29.99) mein convert kar rahe hain taaki math check ho sake
+            return [float(element.text.replace('$', '').strip()) for element in elements]
+        except Exception as e:
+            self.logger.info(f"❌ Error fetching product prices: {e}")
+            return []
+    
+    def click_add_to_cart_first_item(self):
+        self.logger.info("**************Clicking Add to Cart using JavaScript**************")
+        try:
+            add_btn = self.wait.until(EC.element_to_be_clickable((By.XPATH, self.add_to_cart_xapth)))
+            add_btn.click()
+            self.logger.info("Clicked seccesssfully using Native selenium Click")
 
+        except Exception as e:
+            self.logger.info(f"Native clicked Faield due to exexption Switching to click javascript {e}")
+            add_btn_visible = self.wait.until(EC.visibility_of_element_located((By.XPATH, self.add_to_cart_xapth)))
+            self.driver.execute_script("arguments[0].click();", add_btn_visible)
+            self.logger.info("Clickeed suceesfully using JavaScript Exexutor Fallback")
+        time.sleep(5)
+    
 
+    def remove_btn_visible(self):
+        self.logger.info("********Remove btn Visible Checking ****************")
+        try:
+             remove_btn = self.wait.until(EC.visibility_of_element_located((By.XPATH, self.remove_btn_path)))
+             return remove_btn.is_displayed()
+        except Exception as e:
+            self.logger.info(f"Remove btn not visible:{e}")
+            return False
 
-        
+    
 
         

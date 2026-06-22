@@ -6,8 +6,18 @@ from Utilities.ReadEnv import ReadEnvvalue
 @pytest.fixture(scope="class", autouse=True) # Class level scope aur automatic execution
 def setup_browser(request):
     options = webdriver.ChromeOptions()
+    options.add_argument("--disable-features=PasswordLeakDetection")
+    options.add_argument("--disable-popup-blocking")
     options.add_argument("--start-maximized")
     options.add_argument("--disable-extensions")
+    #Password leak credeantails
+    prefs = {
+        "profile.password_manager_leak_detection": False,
+        "credentials_enable_service": False,
+        "profile.password_manager_enabled": False
+    }
+    options.add_experimental_option("prefs", prefs)
+    driver = webdriver.Chrome(options=options)
 
     driver = webdriver.Chrome(options=options)
     driver.implicitly_wait(10)
@@ -30,5 +40,5 @@ def setup_browser(request):
 def user_auth(request):
     if hasattr(request.cls, 'driver'):
         url = ReadEnvvalue.get_base_url()
-        request.cls.driver.delete_all_cookies()  # 🧼 Cookies saaf (Session Logout)
-        request.cls.driver.get(url)               # 🔄 Fresh Login Page Open
+        request.cls.driver.delete_all_cookies() 
+        request.cls.driver.get(url)               

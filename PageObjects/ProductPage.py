@@ -11,7 +11,7 @@ class ProductPage:
     allproducts_names_xpath = "//div[contains(@class, 'inventory_item_name')]"
     allproducts_prices_xpath = "//div[contains(@class, 'inventory_item_price')]"
     add_to_cart_xapth = "//button[@id='add-to-cart-sauce-labs-backpack']"
-    remove_btn_path ="//button[@id='add-to-cart-sauce-labs-backpack']"
+    remove_btn_path ="//button[@id='remove-sauce-labs-backpack']"
 
     def __init__(self, driver):
         self.driver = driver
@@ -32,6 +32,7 @@ class ProductPage:
             select.select_by_value("lohi")  
         elif choice == "high_to_low":
             select.select_by_value("hilo")  
+        else:
             raise ValueError(f"Invalid Sorting Choice Passed: {choice}")
             
         time.sleep(3)
@@ -42,8 +43,9 @@ class ProductPage:
         try:
             elements = self.wait.until(EC.visibility_of_all_elements_located((By.XPATH, self.allproducts_names_xpath)))
             return [element.text for element in elements]
+        
         except Exception as e:
-            self.logger.info(f"❌ Error fetching product names: {e}")
+            self.logger.info(f"Error fetching product names: {e}")
             return []
 
     def get_product_prices(self):
@@ -53,7 +55,7 @@ class ProductPage:
             # '$29.99' ko clean karke float decimal (29.99) mein convert kar rahe hain taaki math check ho sake
             return [float(element.text.replace('$', '').strip()) for element in elements]
         except Exception as e:
-            self.logger.info(f"❌ Error fetching product prices: {e}")
+            self.logger.info(f"Error fetching product prices: {e}")
             return []
     
     def click_add_to_cart_first_item(self):
@@ -68,7 +70,7 @@ class ProductPage:
             add_btn_visible = self.wait.until(EC.visibility_of_element_located((By.XPATH, self.add_to_cart_xapth)))
             self.driver.execute_script("arguments[0].click();", add_btn_visible)
             self.logger.info("Clickeed suceesfully using JavaScript Exexutor Fallback")
-        time.sleep(5)
+        time.sleep(3)
     
 
     def remove_btn_visible(self):
